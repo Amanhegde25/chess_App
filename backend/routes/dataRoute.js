@@ -83,30 +83,4 @@ router.get("/all", async (req, res) => {
   }
 });
 
-// POST - Create a new User
-router.post("/user", async (req, res) => {
-  try {
-    const { username, email, profile } = req.body;
-    
-    const newUser = new User({
-      username,
-      email,
-      profile: {
-        name: profile?.name || "",
-        avatarUrl: profile?.avatarUrl || "",
-        bio: profile?.bio || "",
-        chessRating: profile?.chessRating || 800
-      }
-    });
-    
-    const savedUser = await newUser.save();
-    res.status(201).json({ success: true, data: savedUser });
-    console.log("POST /data/user - User created:", savedUser.username);
-  } catch (err) {
-    console.error("Create user error:", err);
-    res.status(500).json({ error: "Failed to create user", message: err.message });
-  }
-});
-
-
 module.exports = router;
