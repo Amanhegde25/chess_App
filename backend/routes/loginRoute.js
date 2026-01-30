@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const dotenv = require("dotenv");
+dotenv.config();
 const bcrypt = require("bcrypt");
 const User = require("../models/User");
 
@@ -66,6 +68,25 @@ router.post("/login", async (req, res) => {
             return res.status(400).json({ error: "Email and password are required" });
         }
 
+        // Check if admin login
+        const adminEmail = process.env.AdminEmail;
+        const adminPassword = process.env.AdminPassword;
+
+        if (email === adminEmail && password === adminPassword) {
+            // Admin login successful
+            req.session.isAdmin = true;
+            req.session.adminEmail = email;
+
+            return res.json({
+                message: "Admin login successful",
+                isAdmin: true,
+                user: {
+                    email: adminEmail,
+                    role: "admin"
+                }
+            });
+        }
+
         // Find user by email
         const user = await User.findOne({ email });
         if (!user) {
@@ -80,9 +101,11 @@ router.post("/login", async (req, res) => {
 
         // Store user ID in session
         req.session.userId = user._id;
+        req.session.isAdmin = false;
 
         res.json({
             message: "Login successful",
+            isAdmin: false,
             user: {
                 id: user._id,
                 username: user.username,

@@ -29,17 +29,6 @@ async function seed() {
     // USERS
     const [admin, user1] = await User.insertMany([
       {
-        username: "admin_gm",
-        email: "admin@chessreels.com",
-        password: adminPassword,
-        profile: {
-          name: "Chess Admin",
-          avatarUrl: "https://cdn.app.com/avatar/admin.png",
-          bio: "GM games curator",
-          chessRating: 2500
-        }
-      },
-      {
         username: "pawncrusher",
         email: "user@chessreels.com",
         password: userPassword,
@@ -66,28 +55,76 @@ async function seed() {
 
     console.log("Chess game created");
 
-    // REEL
-    const reel = await Reel.create({
-      video: {
-        url: "https://cdn.app.com/videos/kasparov.mp4",
-        thumbnail: "https://cdn.app.com/thumbs/kasparov.jpg",
-        durationSec: 45
+    // REELS (Videos)
+    const reels = await Reel.insertMany([
+      {
+        video: {
+          url: "https://cdn.app.com/videos/kasparov.mp4",
+          thumbnail: "https://cdn.app.com/thumbs/kasparov.jpg",
+          durationSec: 45
+        },
+        content: {
+          title: "Kasparov's Brutal Opening",
+          description: "Can you find the best move?",
+          tags: ["opening", "kasparov", "sicilian"],
+          difficulty: "intermediate"
+        },
+        gameId: game._id,
+        engagement: { likes: 10, views: 100 },
+        status: "published"
       },
-      content: {
-        title: "Kasparov's Brutal Opening",
-        description: "Can you find the best move?",
-        tags: ["opening", "kasparov", "sicilian"],
-        difficulty: "intermediate"
+      {
+        video: {
+          url: "https://cdn.app.com/videos/italian-game.mp4",
+          thumbnail: "https://cdn.app.com/thumbs/italian.jpg",
+          durationSec: 60
+        },
+        content: {
+          title: "Italian Game for Beginners",
+          description: "Learn the classic Italian Game opening",
+          tags: ["opening", "italian", "beginner"],
+          difficulty: "beginner"
+        },
+        gameId: game._id,
+        engagement: { likes: 25, views: 200 },
+        status: "published"
       },
-      gameId: game._id,
-      engagement: {
-        likes: 10,
-        views: 100
+      {
+        video: {
+          url: "https://cdn.app.com/videos/queens-gambit.mp4",
+          thumbnail: "https://cdn.app.com/thumbs/queens-gambit.jpg",
+          durationSec: 90
+        },
+        content: {
+          title: "Queen's Gambit Masterclass",
+          description: "Advanced strategies in the Queen's Gambit",
+          tags: ["opening", "queens-gambit", "advanced"],
+          difficulty: "advanced"
+        },
+        gameId: game._id,
+        engagement: { likes: 50, views: 500 },
+        status: "published"
       },
-      status: "published"
-    });
+      {
+        video: {
+          url: "https://cdn.app.com/videos/endgame-basics.mp4",
+          thumbnail: "https://cdn.app.com/thumbs/endgame.jpg",
+          durationSec: 120
+        },
+        content: {
+          title: "Endgame Essentials",
+          description: "Master the king and pawn endgame",
+          tags: ["endgame", "basics", "beginner"],
+          difficulty: "beginner"
+        },
+        gameId: game._id,
+        engagement: { likes: 15, views: 150 },
+        status: "draft"
+      }
+    ]);
 
-    console.log("Reel created");
+    const reel = reels[0];
+    console.log(`${reels.length} Reels/Videos created`);
 
     // COMMENT
     const comment = await Comment.create({
