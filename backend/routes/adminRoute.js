@@ -4,32 +4,26 @@ const jwt = require("jsonwebtoken");
 
 // Import models
 const Reel = require("../models/Reel");
-
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // Middleware to verify admin access via JWT
 const verifyAdmin = (req, res, next) => {
   const authHeader = req.headers.authorization;
-
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ 
       error: "Access denied", 
       message: "No token provided" 
     });
   }
-
   const token = authHeader.split(" ")[1];
-
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    
     if (!decoded.isAdmin) {
       return res.status(403).json({ 
         error: "Access denied", 
         message: "Admin privileges required" 
       });
     }
-    
     req.admin = decoded;
     next();
   } catch (error) {
@@ -44,7 +38,6 @@ const verifyAdmin = (req, res, next) => {
 router.use(verifyAdmin);
 
 // POST - Upload a new Video (Reel)
-// uploadVideo(adminId, videoData)
 router.post("/video", async (req, res) => {
   try {
     const { adminId, videoData } = req.body;
@@ -79,7 +72,6 @@ router.post("/video", async (req, res) => {
 });
 
 // PUT - Update an existing Video
-// updateVideo(videoId, updatedData)
 router.put("/video/:videoId", async (req, res) => {
   try {
     const { videoId } = req.params;
@@ -116,7 +108,6 @@ router.put("/video/:videoId", async (req, res) => {
 });
 
 // DELETE - Delete a Video
-// deleteVideo(videoId)
 router.delete("/video/:videoId", async (req, res) => {
   try {
     const { videoId } = req.params;
@@ -136,7 +127,6 @@ router.delete("/video/:videoId", async (req, res) => {
 });
 
 // GET - Get all Videos
-// getAllVideos()
 router.get("/videos", async (req, res) => {
   try {
     const videos = await Reel.find()
@@ -152,7 +142,6 @@ router.get("/videos", async (req, res) => {
 });
 
 // GET - Get Video by ID
-// getVideoById(videoId)
 router.get("/video/:videoId", async (req, res) => {
   try {
     const { videoId } = req.params;
