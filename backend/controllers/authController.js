@@ -1,18 +1,16 @@
-const express = require("express");
-const router = express.Router();
-const dotenv = require("dotenv");
-dotenv.config();
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
-const { verifyToken } = require("../middleware/auth");
-
-const SALT_ROUNDS = 10;
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
+import {
+    JWT_SECRET,
+    JWT_EXPIRES_IN,
+    SALT_ROUNDS,
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+} from "../config/env.js";
 
 // POST /auth/register - Create a new user
-router.post("/register", async (req, res) => {
+export const register = async (req, res) => {
     try {
         const { username, email, password } = req.body;
 
@@ -39,8 +37,8 @@ router.post("/register", async (req, res) => {
                 name: null,
                 avatarUrl: null,
                 bio: null,
-                chessRating: 800  // default rating
-            }
+                chessRating: 800,
+            },
         });
 
         await user.save();
@@ -58,18 +56,18 @@ router.post("/register", async (req, res) => {
             user: {
                 id: user._id,
                 username: user.username,
-                email: user.email
-            }
+                email: user.email,
+            },
         });
         console.log("POST /auth/register - User registered:", user.email);
     } catch (error) {
         console.error("Registration error:", error);
         res.status(500).json({ error: "Internal server error" });
     }
-});
+};
 
 // POST /auth/login - Authenticate user
-router.post("/login", async (req, res) => {
+export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -79,26 +77,23 @@ router.post("/login", async (req, res) => {
         }
 
         // Check if admin login
-        const adminEmail = process.env.AdminEmail;
-        const adminPassword = process.env.AdminPassword;
-
-        if (email === adminEmail && password === adminPassword) {
+        if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
             // Generate admin JWT token
             const token = jwt.sign(
-                { email: adminEmail, isAdmin: true, role: "admin" },
+                { email: ADMIN_EMAIL, isAdmin: true, role: "admin" },
                 JWT_SECRET,
                 { expiresIn: JWT_EXPIRES_IN }
             );
 
-            console.log("POST /auth/login - Admin login successful" + adminEmail);
+            console.log("POST /auth/login - Admin login successful" + ADMIN_EMAIL);
             return res.json({
                 message: "Admin login successful",
                 isAdmin: true,
                 token,
                 user: {
-                    email: adminEmail,
-                    role: "admin"
-                }
+                    email: ADMIN_EMAIL,
+                    role: "admin",
+                },
             });
         }
 
@@ -128,25 +123,24 @@ router.post("/login", async (req, res) => {
             user: {
                 id: user._id,
                 username: user.username,
-                email: user.email
-            }
+                email: user.email,
+            },
         });
         console.log("POST /auth/login - User login successful:", user.email);
     } catch (error) {
         console.error("Login error:", error);
         res.status(500).json({ error: "Internal server error" });
     }
-});
+};
 
-// POST /auth/logout - Client should discard token (no server action needed for JWT)
-router.post("/logout", verifyToken, (req, res) => {
-    // With JWT, logout is handled client-side by discarding the token
+// POST /auth/logout - Client should discard token
+export const logout = (req, res) => {
     res.json({ message: "Logout successful. Please discard your token." });
     console.log("POST /auth/logout - User logged out: " + req.user.email);
-});
+};
 
 // PUT /auth/setup-profile - Setup or update user profile
-router.put("/setup-profile", verifyToken, async (req, res) => {
+export const setupProfile = async (req, res) => {
     try {
         const { name, avatarUrl, bio, chessRating } = req.body;
 
@@ -165,7 +159,9 @@ router.put("/setup-profile", verifyToken, async (req, res) => {
 
         // Check if at least one field is provided
         if (Object.keys(profileUpdate).length === 0) {
-            return res.status(400).json({ error: "At least one profile field is required (name, avatarUrl, bio, or chessRating)" });
+            return res.status(400).json({
+                error: "At least one profile field is required (name, avatarUrl, bio, or chessRating)",
+            });
         }
 
         // Update user profile
@@ -185,18 +181,18 @@ router.put("/setup-profile", verifyToken, async (req, res) => {
                 id: updatedUser._id,
                 username: updatedUser.username,
                 email: updatedUser.email,
-                profile: updatedUser.profile
-            }
+                profile: updatedUser.profile,
+            },
         });
         console.log("PUT /auth/setup-profile - Profile updated:", updatedUser.email);
     } catch (error) {
         console.error("Profile setup error:", error);
         res.status(500).json({ error: "Internal server error" });
     }
-});
+};
 
 // DELETE /auth/delete-account - Delete user account
-router.delete("/delete-account", verifyToken, async (req, res) => {
+export const deleteAccount = async (req, res) => {
     try {
         // Delete user from database
         const deletedUser = await User.findByIdAndDelete(req.user.userId);
@@ -210,6 +206,4 @@ router.delete("/delete-account", verifyToken, async (req, res) => {
         console.error("Delete account error:", error);
         res.status(500).json({ error: "Internal server error" });
     }
-});
-
-module.exports = router;
+};

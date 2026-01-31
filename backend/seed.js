@@ -1,17 +1,18 @@
-require("dotenv").config();
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+import mongoose from "mongoose";
+import bcrypt from "bcrypt";
+import { MONGO_URI } from "./config/env.js";
 
-// MODELS
-const User = require("./models/User");
-const ChessGame = require("./models/ChessGame");
-const Reel = require("./models/Reel");
-const Comment = require("./models/Comment");
+// Models
+import User from "./models/User.js";
+import ChessGame from "./models/ChessGame.js";
+import Reel from "./models/Reel.js";
+import Comment from "./models/Comment.js";
 
 async function seed() {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(MONGO_URI);
     console.log("MongoDB connected");
+
     // Clear existing data
     await Promise.all([
       User.deleteMany(),
@@ -23,7 +24,6 @@ async function seed() {
     console.log("Old data cleared");
 
     // Hash passwords for seed users
-    const adminPassword = await bcrypt.hash("admin123", 10);
     const userPassword = await bcrypt.hash("user123", 10);
 
     // USERS
@@ -36,9 +36,9 @@ async function seed() {
           name: "Pawn Crusher",
           avatarUrl: "https://cdn.app.com/avatar/user.png",
           bio: "Learning tactics",
-          chessRating: 1200
-        }
-      }
+          chessRating: 1200,
+        },
+      },
     ]);
 
     console.log("Users created");
@@ -50,7 +50,7 @@ async function seed() {
       event: "World Championship",
       year: 1985,
       result: "1-0",
-      pgn: "1.e4 c5 2.Nf3 d6 3.d4..."
+      pgn: "1.e4 c5 2.Nf3 d6 3.d4...",
     });
 
     console.log("Chess game created");
@@ -61,80 +61,79 @@ async function seed() {
         video: {
           url: "https://cdn.app.com/videos/kasparov.mp4",
           thumbnail: "https://cdn.app.com/thumbs/kasparov.jpg",
-          durationSec: 45
+          durationSec: 45,
         },
         content: {
           title: "Kasparov's Brutal Opening",
           description: "Can you find the best move?",
           tags: ["opening", "kasparov", "sicilian"],
-          difficulty: "intermediate"
+          difficulty: "intermediate",
         },
         gameId: game._id,
         engagement: { likes: 10, views: 100 },
-        status: "published"
+        status: "published",
       },
       {
         video: {
           url: "https://cdn.app.com/videos/italian-game.mp4",
           thumbnail: "https://cdn.app.com/thumbs/italian.jpg",
-          durationSec: 60
+          durationSec: 60,
         },
         content: {
           title: "Italian Game for Beginners",
           description: "Learn the classic Italian Game opening",
           tags: ["opening", "italian", "beginner"],
-          difficulty: "beginner"
+          difficulty: "beginner",
         },
         gameId: game._id,
         engagement: { likes: 25, views: 200 },
-        status: "published"
+        status: "published",
       },
       {
         video: {
           url: "https://cdn.app.com/videos/queens-gambit.mp4",
           thumbnail: "https://cdn.app.com/thumbs/queens-gambit.jpg",
-          durationSec: 90
+          durationSec: 90,
         },
         content: {
           title: "Queen's Gambit Masterclass",
           description: "Advanced strategies in the Queen's Gambit",
           tags: ["opening", "queens-gambit", "advanced"],
-          difficulty: "advanced"
+          difficulty: "advanced",
         },
         gameId: game._id,
         engagement: { likes: 50, views: 500 },
-        status: "published"
+        status: "published",
       },
       {
         video: {
           url: "https://cdn.app.com/videos/endgame-basics.mp4",
           thumbnail: "https://cdn.app.com/thumbs/endgame.jpg",
-          durationSec: 120
+          durationSec: 120,
         },
         content: {
           title: "Endgame Essentials",
           description: "Master the king and pawn endgame",
           tags: ["endgame", "basics", "beginner"],
-          difficulty: "beginner"
+          difficulty: "beginner",
         },
         gameId: game._id,
         engagement: { likes: 15, views: 150 },
-        status: "draft"
-      }
+        status: "draft",
+      },
     ]);
 
     const reel = reels[0];
     console.log(`${reels.length} Reels/Videos created`);
 
     // COMMENT
-    const comment = await Comment.create({
+    await Comment.create({
       reelId: reel._id,
       userId: user1._id,
-      text: "Wow, that central break is powerful!"
+      text: "Wow, that central break is powerful!",
     });
 
     console.log("Comment created");
-
 
     console.log("SEEDING COMPLETE");
     process.exit(0);

@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const reelSchema = new mongoose.Schema({
   video: {
@@ -13,30 +13,30 @@ const reelSchema = new mongoose.Schema({
     tags: [String],
     difficulty: {
       type: String,
-      enum: ["beginner", "intermediate", "advanced"]
-    }
+      enum: ["beginner", "intermediate", "advanced"],
+    },
   },
 
   gameId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "ChessGame"
+    ref: "ChessGame",
   },
 
   engagement: {
     likes: { type: Number, default: 0 },
     comments: { type: Number, default: 0 },
     views: { type: Number, default: 0 },
-    saves: { type: Number, default: 0 }
+    saves: { type: Number, default: 0 },
   },
 
   status: {
     type: String,
     enum: ["draft", "published", "archived"],
-    default: "draft"
-  }
+    default: "draft",
+  },
 }, { timestamps: true });
 
 reelSchema.index({ "content.tags": 1 });
 reelSchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model("Reel", reelSchema);
+export default mongoose.model("Reel", reelSchema);

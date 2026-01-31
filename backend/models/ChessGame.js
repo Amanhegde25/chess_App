@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const chessGameSchema = new mongoose.Schema({
   whitePlayer: { type: String, required: true },
@@ -6,8 +6,8 @@ const chessGameSchema = new mongoose.Schema({
   event: String,
   year: Number,
 
-  result: String,   
-  pgn: { type: String, required: true }
+  result: String,
+  pgn: { type: String, required: true },
 });
 
-module.exports = mongoose.model("ChessGame", chessGameSchema);
+export default mongoose.model("ChessGame", chessGameSchema);
