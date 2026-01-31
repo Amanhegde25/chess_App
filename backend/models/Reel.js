@@ -4,7 +4,8 @@ const reelSchema = new mongoose.Schema({
   video: {
     url: { type: String, required: true },
     thumbnail: String,
-    durationSec: Number
+    durationSec: Number,
+    unique: true
   },
 
   content: {
