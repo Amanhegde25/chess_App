@@ -5,7 +5,6 @@ const reelSchema = new mongoose.Schema({
     url: { type: String, required: true },
     thumbnail: String,
     durationSec: Number,
-    unique: true
   },
 
   content: {
