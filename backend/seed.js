@@ -126,14 +126,42 @@ async function seed() {
     const reel = reels[0];
     console.log(`${reels.length} Reels/Videos created`);
 
-    // COMMENT
-    await Comment.create({
+    // COMMENTS - Parent with nested replies for testing
+    const parentComment = await Comment.create({
       reelId: reel._id,
       userId: user1._id,
       text: "Wow, that central break is powerful!",
     });
 
-    console.log("Comment created");
+    const reply1 = await Comment.create({
+      reelId: reel._id,
+      userId: user1._id,
+      text: "I agree! Kasparov was a genius.",
+      parentCommentId: parentComment._id,
+    });
+
+    await Comment.create({
+      reelId: reel._id,
+      userId: user1._id,
+      text: "This reply is nested under reply1",
+      parentCommentId: reply1._id,
+    });
+
+    await Comment.create({
+      reelId: reel._id,
+      userId: user1._id,
+      text: "Another reply to the parent",
+      parentCommentId: parentComment._id,
+    });
+
+    // Update parent's repliesCount
+    await Comment.findByIdAndUpdate(parentComment._id, { repliesCount: 2 });
+    await Comment.findByIdAndUpdate(reply1._id, { repliesCount: 1 });
+
+    // Update reel's comment count
+    await Reel.findByIdAndUpdate(reel._id, { "engagement.comments": 4 });
+
+    console.log("4 Comments created (1 parent + 3 replies)");
 
     console.log("SEEDING COMPLETE");
     process.exit(0);
