@@ -2,12 +2,11 @@ import { Router } from "express";
 import { verifyToken } from "../middleware/auth.js";
 import {
     getFeed,
-    getReelById,
+    getRandomReels,
+    getAvailableGames,
+    getReelsByGame,
     viewReel,
-    searchReels,
-    getTrendingReels,
     getReelStats,
-    getReelsByDifficulty,
 } from "../controllers/reelController.js";
 import {
     likeReel,
@@ -24,14 +23,14 @@ const router = Router();
 // GET /reels - Get paginated feed of published reels
 router.get("/", getFeed);
 
-// GET /reels/search - Search reels by query, tags, or difficulty
-router.get("/search", searchReels);
+// GET /reels/random - Get random reels (for "Discover" section)
+router.get("/random", getRandomReels);
 
-// GET /reels/trending - Get trending reels
-router.get("/trending", getTrendingReels);
+// GET /reels/games - Get list of available games (for game selection UI)
+router.get("/games", getAvailableGames);
 
-// GET /reels/filter/difficulty/:difficulty - Get reels by difficulty level
-router.get("/filter/difficulty/:difficulty", getReelsByDifficulty);
+// GET /reels/game/:gameId - Get reels for a specific game
+router.get("/game/:gameId", getReelsByGame);
 
 // GET /reels/:reelId/stats - Get engagement stats for a reel
 router.get("/:reelId/stats", getReelStats);
@@ -56,12 +55,4 @@ router.post("/:reelId/comments", verifyToken, createComment);
 // DELETE /reels/:reelId/comments/:commentId - Delete a comment
 router.delete("/:reelId/comments/:commentId", verifyToken, deleteComment);
 
-// ============ CATCH-ALL PARAMETERIZED ROUTE ============
-// This MUST be last to avoid matching before specific routes
-
-// GET /reels/:reelId - Get a single reel by ID
-router.get("/:reelId", getReelById);
-
 export default router;
-
-
