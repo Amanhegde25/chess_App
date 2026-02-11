@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stockfish Worker</title>
+</head>
+
+<body>
+  <script>
+    /**
+     * stockfish-worker.html
+     *
+     * Runs Stockfish inside a WebView, communicating with React Native
+     * via the postMessage bridge.
+     *
+     * CORS Fix:
+     *   Web Workers cannot load cross-origin scripts directly.
+     *   We fetch the Stockfish JS source as text, create a Blob URL,
+     *   and spawn the Worker from that local blob — bypassing CORS.
+     *
+     * Communication Protocol:
+     *   RN → WebView:  { type: 'evaluate', fen: '...' }
+     *   WebView → RN:  { type: 'eval', score, depth, bestMove }
+     */
+
+    let stockfish = null;
+    let currentEval = null;
+    let isReady = false;
+
+    /* ── Stockfish CDN URLs to try, in order ───────────────────────────── */
+    const ENGINE_URLS = [
+      'https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js',
+      'https://cdn.jsdelivr.net/npm/stockfish.wasm@0.10.0/stockfish.js',
+    ];
+
+    /* ── Post a message back to React Native ───────────────────────────── */
+    function sendToRN(data) {
+      try {
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(JSON.stringify(data));
+        }
+      } catch (e) {
+        console.error('sendToRN failed:', e);
+      }
+    }
+
+    /* ── Fetch script text → Blob URL → Worker (bypasses CORS) ────────── */
+    async function createWorkerFromURL(url) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      const blob = new Blob([text], { type: 'application/javascript' });
+      return new Worker(URL.createObjectURL(blob));
+    }
+
+    /* ── Initialize the engine ─────────────────────────────────────────── */
+    async function initEngine() {
+      for (const url of ENGINE_URLS) {
+        try {
+          sendToRN({ type: 'loading', url });
+          stockfish = await createWorkerFromURL(url);
+
+          stockfish.onmessage = function (e) { handleEngineMessage(e.data); };
+          stockfish.onerror = function (e) {
+            sendToRN({ type: 'error', message: 'Worker error: ' + (e.message || e) });
+          };
+
+          stockfish.postMessage('uci');
+          return; // success — stop trying other URLs
+        } catch (err) {
+          sendToRN({ type: 'error', message: 'Failed ' + url + ': ' + err.message });
+        }
+      }
+      sendToRN({ type: 'error', message: 'All Stockfish sources failed to load.' });
+    }
+
+    /* ── Handle UCI output from the engine ─────────────────────────────── */
+    function handleEngineMessage(line) {
+      if (typeof line !== 'string') return;
+
+      if (line === 'uciok') {
+        stockfish.postMessage('setoption name Threads value 1');
+        stockfish.postMessage('setoption name Hash value 16');
+        stockfish.postMessage('isready');
+        return;
+      }
+
+      if (line === 'readyok') {
+        isReady = true;
+        sendToRN({ type: 'ready' });
+        return;
+      }
+
+      // Parse "info … score …" lines (depth ≥ 8)
+      if (line.startsWith('info') && line.includes('score')) {
+        const dm = line.match(/depth (\d+)/);
+        const depth = dm ? parseInt(dm[1], 10) : 0;
+        if (depth >= 8) {
+          let score = null;
+          const cp = line.match(/score cp (-?\d+)/);
+          if (cp) score = parseInt(cp[1], 10) / 100;
+          const mt = line.match(/score mate (-?\d+)/);
+          if (mt) score = parseInt(mt[1], 10) > 0 ? 999 : -999;
+          if (score !== null) currentEval = { score, depth, raw: line };
+        }
+      }
+
+      // "bestmove" → send final result
+      if (line.startsWith('bestmove')) {
+        const bm = line.match(/bestmove (\S+)/);
+        if (currentEval) {
+          sendToRN({
+            type: 'eval',
+            score: currentEval.score,
+            depth: currentEval.depth,
+            bestMove: bm ? bm[1] : null,
+            raw: currentEval.raw,
+          });
+        }
+        currentEval = null;
+      }
+    }
+
+    /* ── Handle messages from React Native ─────────────────────────────── */
+    function handleRNMessage(event) {
+      let data;
+      try {
+        data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      } catch (_) { return; }
+
+      switch (data.type) {
+        case 'init':
+          initEngine();
+          break;
+        case 'evaluate':
+          if (!stockfish || !isReady) {
+            sendToRN({ type: 'error', message: 'Engine not ready' });
+            return;
+          }
+          currentEval = null;
+          stockfish.postMessage('stop');
+          stockfish.postMessage('position fen ' + data.fen);
+          stockfish.postMessage('go depth ' + (data.depth || 15));
+          break;
+        case 'stop':
+          if (stockfish) stockfish.postMessage('stop');
+          break;
+      }
+    }
+
+    window.addEventListener('message', handleRNMessage);
+    document.addEventListener('message', handleRNMessage);
+
+    window.onload = function () {
+      sendToRN({ type: 'loading' });
+      initEngine();
+    };
+  </script>
+</body>
+
+</html>
